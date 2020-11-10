@@ -3,7 +3,6 @@
 #última atualização: 10/11/2019
 
 #Definindo diretórios a serem utilizados
-
 getwd()
 setwd("C:/Users/User/Documents")
 
