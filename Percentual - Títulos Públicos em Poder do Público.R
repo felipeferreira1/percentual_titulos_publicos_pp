@@ -49,9 +49,9 @@ for (i in 1:length(ultimo_dia_util)){
   assign(nome_arquivo, dados) #Nomeando arquivos
   lista_nome_arquivos[i] <- nome_arquivo #Guardando nome dos arquivos
   if(i==1)
-    export(dados, "resultado.xlsx", sheetName = nome_arquivo)
+    export(dados, "Percentual - Títulos Públicos em Poder do Público(fonte).xlsx", sheetName = nome_arquivo)
   else
-    export(dados, "resultado.xlsx", which = nome_arquivo)
+    export(dados, "Percentual - Títulos Públicos em Poder do Público(fonte).xlsx", which = nome_arquivo)
   print(paste(i, length(ultimo_dia_util), sep = '/')) #Printa o progresso da repetição
 }
 rm(dados)
