@@ -1,6 +1,6 @@
 #Rotina para coletar e calcular o percentual de títulos públicos em poder do público 
 #Feito por: Felipe Simplício Ferreira
-#última atualização: 10/11/2019
+#última atualização: 13/11/2019
 
 #Definindo diretórios a serem utilizados
 getwd()
@@ -22,9 +22,7 @@ abertura = "D" #D (dia) ou M (mês) ou A (ano)
 indice = "M" #M para valores em R$ milhões, R para valores em Reais, S para valores US$ milhões ou U para valores em US$ 
 formato = "A" #A (CSV) ou T (tela) ou E (Excel)
 data_inicial = "2020-01-01" %>% as.Date()
-data_final = format(Sys.time(), "%Y-%m-%d")
-while (isBusinessDay("Brazil", data_final) == F)
-  data_final <- data_final + 1
+data_final = as.Date(Sys.time())
 
 #Criando lista com últimos dias úteis do mês
 lista_dias <- c(data_inicial, data_final) #Lista com data do início do ano e data de hoje
@@ -33,14 +31,19 @@ dias_uteis <- data.frame(dates=dias_uteis, bizday=isBusinessDay("Brazil", dias_u
 dias_uteis <- filter(dias_uteis, bizday == "TRUE") #Filtrando só os dias úteis
 dias_uteis <- data.table(dias_uteis) #Transformando em data.table
 dias_uteis <- dias_uteis %>% mutate(lista_dias = tapply(dias_uteis$dates, as.yearmon(dias_uteis$dates))) #Criando coluna com a lista_dias
+
+#Como a referência de um mês é o último dia útil do mês anterior, vamos pegar todo primeiro dia útel dos meses (para identificar) e o último dia útil do mês anterior(para ser a referência na busca) de cada mês
 ultimo_dia_util <- dias_uteis[,tail(.SD,1),by = lista_dias] #Selecionando o último dia útil de cada mês
 ultimo_dia_util <- as.array(ultimo_dia_util$dates) #Transformando em vetor
 ultimo_dia_util[length(ultimo_dia_util)] <- format(Sys.time()) #Adicionando dia de hoje
 ultimo_dia_util <- format(ultimo_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
 primeiro_dia_util <- dias_uteis[,head(.SD,1),by = lista_dias] #Selecionando o primeiro dia útil de cada mês
 primeiro_dia_util <- as.array(primeiro_dia_util$dates) #Transformando em vetor
-primeiro_dia_util[length(primeiro_dia_util) + 1 ] <- format(Sys.time()) #Adicionando dia de hoje
-primeiro_dia_util <- primeiro_dia_util[-1] #Tirando primeiro dado, já que a referência do 1º mês se calcula tendo como referência o último dia útil do mês anterior
+proximo_dia_util <- as.Date(Sys.time()) + 1 #Pegamos o próximo dia útil (para usar como identificador), a partir da data de hoje, já que hoje é a referência do próximo dia útil
+while (isBusinessDay("Brazil", proximo_dia_util) == F)
+  proximo_dia_util <- proximo_dia_util + 1
+primeiro_dia_util[length(primeiro_dia_util) + 1 ] <- proximo_dia_util
+primeiro_dia_util <- primeiro_dia_util[-1] #Tirando primeiro dado, já que a referência do 1º mês da da série é calculada tendo como referência o último dia útil do mês anterior
 primeiro_dia_util <- format(primeiro_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
 
 #Criando lista com nome de arquivos
