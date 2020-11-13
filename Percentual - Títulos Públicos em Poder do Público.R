@@ -19,20 +19,29 @@ library(ggrepel)
 
 #Definindo argumentos da coleta
 abertura = "D" #D (dia) ou M (mês) ou A (ano)
-indice = "M" #M para valores em R$ milhões, R para valores em Reais, S para valores US$milhões ou U para valores em US$ 
+indice = "M" #M para valores em R$ milhões, R para valores em Reais, S para valores US$ milhões ou U para valores em US$ 
 formato = "A" #A (CSV) ou T (tela) ou E (Excel)
+data_inicial = "2020-01-01" %>% as.Date()
+data_final = format(Sys.time(), "%Y-%m-%d")
+while (isBusinessDay("Brazil", data_final) == F)
+  data_final <- data_final + 1
 
 #Criando lista com últimos dias úteis do mês
-lista_dias <- c("2020-01-01", format(Sys.time(), "%Y-%m-%d")) #Lista com data do início do ano e data de hoje
-dias_uteis <- seq(as.Date(lista_dias[[1]]), as.Date(lista_dias[2]), by="1 day") #Calculando quais são os dias entre essas duas datas 
+lista_dias <- c(data_inicial, data_final) #Lista com data do início do ano e data de hoje
+dias_uteis <- seq(lista_dias[1], lista_dias[2], by="1 day") #Calculando quais são os dias entre essas duas datas 
 dias_uteis <- data.frame(dates=dias_uteis, bizday=isBusinessDay("Brazil", dias_uteis)) #Marcando quais desses dias são úteis
 dias_uteis <- filter(dias_uteis, bizday == "TRUE") #Filtrando só os dias úteis
 dias_uteis <- data.table(dias_uteis) #Transformando em data.table
-dias_uteis <- dias_uteis %>% mutate(lista_dias = tapply(dias_uteis$dates, as.yearmon(dias_uteis$dates))) #Criando coluna com os lista_dias
+dias_uteis <- dias_uteis %>% mutate(lista_dias = tapply(dias_uteis$dates, as.yearmon(dias_uteis$dates))) #Criando coluna com a lista_dias
 ultimo_dia_util <- dias_uteis[,tail(.SD,1),by = lista_dias] #Selecionando o último dia útil de cada mês
 ultimo_dia_util <- as.array(ultimo_dia_util$dates) #Transformando em vetor
 ultimo_dia_util[length(ultimo_dia_util)] <- format(Sys.time()) #Adicionando dia de hoje
-ultimo_dia_util <- format(ultimo_dia_util, "%d/%m/%Y") #Formantando como datas "dd/mm/YYYY"
+ultimo_dia_util <- format(ultimo_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
+primeiro_dia_util <- dias_uteis[,head(.SD,1),by = lista_dias] #Selecionando o primeiro dia útil de cada mês
+primeiro_dia_util <- as.array(primeiro_dia_util$dates) #Transformando em vetor
+primeiro_dia_util[length(primeiro_dia_util) + 1 ] <- format(Sys.time()) #Adicionando dia de hoje
+primeiro_dia_util <- primeiro_dia_util[-1] #Tirando primeiro dado, já que a referência do 1º mês se calcula tendo como referência o último dia útil do mês anterior
+primeiro_dia_util <- format(primeiro_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
 
 #Criando lista com nome de arquivos
 lista_nome_arquivos <- NULL #Vazia, a ser preenchida
@@ -59,8 +68,8 @@ rm(dados)
 #Calculando acumulados em 6 e 12 meses
 filtros_6_meses <- ymd(as.Date(ultimo_dia_util, format = "%d/%m/%Y") %m+% months(6)) #Calculando 6 meses a frente
 filtros_12_meses <- ymd(as.Date(ultimo_dia_util, format = "%d/%m/%Y") %m+% months(12)) #Calculando 12 meses a frente
-acumulado_6_meses <- data.table(Data = as.Date(ultimo_dia_util, format = "%d/%m/%Y")+1, Acumulado = 0) #Criando data.table vazio
-acumulado_12_meses <- data.table(Data = as.Date(ultimo_dia_util, format = "%d/%m/%Y")+1, Acumulado = 0) #Criando data.table vazio
+acumulado_6_meses <- data.table(Data = as.Date(primeiro_dia_util, format = "%d/%m/%Y"), Acumulado = 0) #Criando data.table vazio
+acumulado_12_meses <- data.table(Data = as.Date(primeiro_dia_util, format = "%d/%m/%Y"), Acumulado = 0) #Criando data.table vazio
 
 for (i in 1:length(lista_nome_arquivos)){
   acumulado <- get(lista_nome_arquivos[i]) #Chamando arquivos
@@ -70,6 +79,8 @@ for (i in 1:length(lista_nome_arquivos)){
   print(paste(i, length(lista_nome_arquivos), sep = '/')) #Printa o progresso da repetição
 }
 
+export(acumulado_6_meses, "Percentual - Títulos Públicos em Poder do Público(fonte).xlsx", which = "Acum_6_meses")
+
 for (i in 1:length(lista_nome_arquivos)){
   acumulado <- get(lista_nome_arquivos[i]) #Chamando arquivos
   acumulado <- filter(acumulado, Data < filtros_12_meses[i]) #Filtrando para datas < que 12 meses
@@ -77,6 +88,8 @@ for (i in 1:length(lista_nome_arquivos)){
   acumulado_12_meses[i,2] <- acumulado #Adicionando ao data.table de acumulados
   print(paste(i, length(lista_nome_arquivos), sep = '/')) #Printa o progresso da repetição
 }
+
+export(acumulado_12_meses, "Percentual - Títulos Públicos em Poder do Público(fonte).xlsx", which = "Acum_12_meses")
 
 #Gráficos
   #Acumulado em 6 meses
