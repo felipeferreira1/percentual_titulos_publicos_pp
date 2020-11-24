@@ -39,10 +39,10 @@ ultimo_dia_util[length(ultimo_dia_util)] <- format(Sys.time()) #Adicionando dia 
 ultimo_dia_util <- format(ultimo_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
 primeiro_dia_util <- dias_uteis[,head(.SD,1),by = lista_dias] #Selecionando o primeiro dia útil de cada mês
 primeiro_dia_util <- as.array(primeiro_dia_util$dates) #Transformando em vetor
-proximo_dia_util <- as.Date(Sys.time()) + 1 #Pegamos o próximo dia útil (para usar como identificador), a partir da data de hoje, já que hoje é a referência do próximo dia útil
-while (isBusinessDay("Brazil", proximo_dia_util) == F)
-  proximo_dia_util <- proximo_dia_util + 1
-primeiro_dia_util[length(primeiro_dia_util) + 1 ] <- proximo_dia_util
+dia_do_ultimo_dado <- as.Date(Sys.Date()) #Pegamos o dia do último dado, sabendo que a referência sempre será o dia útil imediatamente anterior
+while (isBusinessDay("Brazil", dia_do_ultimo_dado) == F)
+  dia_do_ultimo_dado <- dia_do_ultimo_dado + 1
+primeiro_dia_util[length(primeiro_dia_util) + 1 ] <- dia_do_ultimo_dado
 primeiro_dia_util <- primeiro_dia_util[-1] #Tirando primeiro dado, já que a referência do 1º mês da da série é calculada tendo como referência o último dia útil do mês anterior
 primeiro_dia_util <- format(primeiro_dia_util, "%d/%m/%Y") #Formatando como datas "dd/mm/YYYY"
 
